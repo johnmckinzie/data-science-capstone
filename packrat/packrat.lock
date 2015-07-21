@@ -1,0 +1,25 @@
+PackratFormat: 1.4
+PackratVersion: 0.4.4
+RVersion: 3.2.1
+Repos: CRAN=http://cran.rstudio.com
+
+Package: NLP
+Source: CRAN
+Version: 0.1-8
+Hash: 06fece1966c1a9ff581c6806c0dac7dc
+
+Package: packrat
+Source: CRAN
+Version: 0.4.4
+Hash: aed7d17407538df551a57caf6289c8bf
+
+Package: slam
+Source: CRAN
+Version: 0.1-32
+Hash: bc3501cd4badda02e5be7837847c887d
+
+Package: tm
+Source: CRAN
+Version: 0.6-2
+Hash: 69b73ead3c7aeddd2b2cab86c80ee85c
+Requires: NLP, slam
