@@ -11,23 +11,26 @@
 # 
 # close(con) ## It's important to close the connection when you are done
 
+kDataDir <- "data"
+
 library(tm)
-a <- Corpus(DirSource("en_US_head"), readerControl = list(language="en-US"))
+a <- Corpus(DirSource(file.path(kDataDir, "en_US_head")), readerControl = list(language="en-US"))
 a <- tm_map(a, removeNumbers)
 a <- tm_map(a, removePunctuation)
 a <- tm_map(a , stripWhitespace)
 a <- tm_map(a, content_transformer(tolower))
 a <- tm_map(a, removeWords, stopwords("english"))
-# a <- tm_map(a, stemDocument, language = "english") 
-# I also got it to work with stemming, but it takes so long...
+a <- tm_map(a, stemDocument, language = "english") # I also got it to work with stemming, but it takes so long...
+# remove words longer than 28, https://en.wikipedia.org/wiki/Longest_word_in_English
+# remove bad words https://github.com/shutterstock/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words
 adtm <-DocumentTermMatrix(a) 
 adtm <- removeSparseTerms(adtm, 0.75)
 
 inspect(adtm) 
 
-findFreqTerms(adtm, lowfreq=10) # find terms with a frequency higher than 10
-findAssocs(adtm, "usa",.5) # just looking for some associations  
-findAssocs(adtm, "china",.5)
+# print(findFreqTerms(adtm, lowfreq=10)) # find terms with a frequency higher than 10
+print(findAssocs(adtm, "usa",.5)) # just looking for some associations  
+# findAssocs(adtm, "china",.5)
 
 # Trigrams
 # require(RWeka)

@@ -20,6 +20,11 @@ Version: 3.7.12-1
 Hash: f2e7598e398d361335330e1eb20959e8
 Requires: rJava
 
+Package: SnowballC
+Source: CRAN
+Version: 0.5.1
+Hash: 6f14c834eea7672f25b83d9ba35b85ca
+
 Package: bitops
 Source: CRAN
 Version: 1.0-6
