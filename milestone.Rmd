@@ -149,17 +149,17 @@ Below are plots of the top 20 occuring unigrams, bigrams and trigrams.
 ggplot(data = counts.unigram, aes(x = reorder(Gram, -Count), y = Count)) +
   labs(title = "Most Common Unigrams", x = "Unigram", y = "Count") +
   geom_bar(stat = "Identity", aes(fill = Count)) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 
 ggplot(data = counts.bigram, aes(x = reorder(Gram, -Count), y = Count)) +
-  labs(title = "Most Common Bigrams", x = "Unigram", y = "Count") +
+  labs(title = "Most Common Bigrams", x = "Bigram", y = "Count") +
   geom_bar(stat = "Identity", aes(fill = Count)) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 
 ggplot(data = counts.trigram, aes(x = reorder(Gram, -Count), y = Count)) +
-  labs(title = "Most Common Trigram", x = "Unigram", y = "Count") +
+  labs(title = "Most Common Trigrams", x = "Trigram", y = "Count") +
   geom_bar(stat = "Identity", aes(fill = Count)) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 
 ```
 
