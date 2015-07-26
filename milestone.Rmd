@@ -5,18 +5,165 @@ date: "July 21, 2015"
 output: html_document
 ---
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+# Summary
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+This report sought to gain a better understanding of the capstone data set and it's application to a predictive
+text model. The data files cleaned and transformed and eventually tokenized into unigrams, bigrams and trigrams. 
 
-```{r}
-summary(cars)
+# Corpus
+
+The corpus we are using can be found here: 
+(https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip). It is part of a larger corpus called 
+[HC Corpora](www.corpora.heliohost.org). The corpus contains text from blog entries, news posting and twitter feeds.
+
+# Dependencies
+
+For for this report, the following libraries were used:
+
+```{r, message=FALSE}
+library(tm)
+library(RWeka)
+library(knitr)
+library(ggplot2)
 ```
 
-You can also embed plots, for example:
+# Files
 
-```{r, echo=FALSE}
-plot(cars)
+We used the `en_US` set of files for this report. The individual and group file statistics can found below:
+
+```{r files_stats, echo=FALSE}
+kDataDir <- "data"
+kDataSet <- "final"
+kDataSampleSet <- "sample"
+kLang <- "en_US"
+kCourpusDir <- file.path(kDataDir, kDataSet, kLang)
+kCourpusSampleDir <- file.path(kDataDir, kDataSampleSet, kLang)
+kBadWords = "bad_words.txt"
+
+GetCorpusFiles <- function(dir = kCourpusDir) {
+  list.files(kCourpusDir, dir)
+}
+
+GetFileStats <- function(dir = kCourpusDir) {
+  currentwd <- getwd()
+  setwd(dir)
+  counts <- system(paste("wc -lw * | awk '{ print $3, $1, $2 }'"), intern = TRUE)
+  m <- matrix(c("Name", "Lines", "Words"), ncol = 3)
+
+  for (line in counts) {
+    values <- strsplit(line, " ")
+    m <- rbind(m, strsplit(line, " ")[[1]])
+  }
+  
+  m <- m[-1, ]
+  files.corpus.stats <- as.data.frame(m, header=TRUE)
+
+  sizes <- system(paste("ls -l * | awk '{ print $5 }'"), intern = TRUE)
+  sizes <- as.integer(sizes)
+  sizes <- round(c(sizes, sum(sizes)) / (2^20))
+  files.corpus.stats$Size <- sizes
+  colnames(files.corpus.stats) <- c("Name", "Lines", "Words", "Size (MBs)")
+  
+  setwd(currentwd)
+  return(files.corpus.stats)
+}
+
+kable(GetFileStats()) 
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+This data set is quite large, totaling over half a GB of data.
+
+# Data Cleaning and Transformation
+
+Since we have such a large data set, we used just a sample of it for the exploratory analysis. For each of the 
+documents in the corpus, a corresponding sample file was created by randomly selecting 1% of the line of the file. The 
+following are the commands used to create the sample files:
+
+```
+shuf -n 8992 en_US.blogs.txt > ../../sample/en_US/en_US.blogs.txt
+shuf -n 10102 en_US.news.txt > ../../sample/en_US/en_US.news.txt
+shuf -n 23601 en_US.twitter.txt > ../../sample/en_US/en_US.twitter.txt
+```
+
+Next, the corpus needed to be cleaned. This entailed removing puncation, numbers, whitespace, stop words and words 
+considers inappropriate. The corpus also needs to be transformed. This can entail converting to lower-case. In some
+circumstances, stemming can be done to convert words (e.g. plurals) to their lemmas by removing their affixes. 
+However, stemming was not performed for this report, since the the different forms of a word would seem to add value to 
+prediction.
+
+After the corpus was been cleaned and transformed, Term Document Matrices (TDMs) were computed. This calculates the number of 
+times a unique term occur in each document. This can provide insight into which words are most common in a corpus and 
+can be used for future prediction.
+
+```{r data_cleaning}
+options(mc.cores=1)
+
+CleanAndTransformCorpus <- function(corpus) {
+  corpus <- tm_map(corpus, removePunctuation)
+  corpus <- tm_map(corpus, removeNumbers)
+  corpus <- tm_map(corpus, stripWhitespace)
+  corpus <- tm_map(corpus, tm::content_transformer(function(x) iconv(x, from = "UTF-8", to = "ASCII", sub = "")))
+  corpus <- tm_map(corpus, tm::content_transformer(tolower))
+  corpus <- tm_map(corpus, removeWords, c(stopwords("english"), readLines(kBadWords)), lazy = TRUE)
+  # corpus <- tm_map(corpus, stemDocument, language = "english", lazy = TRUE)
+  corpus <- tm_map(corpus, PlainTextDocument)
+  return(corpus)
+}
+
+c <- tm::Corpus(DirSource(kCourpusSampleDir), readerControl = list(language = "en-US"))
+c <- CleanAndTransformCorpus(c)
+
+# tokenizers
+TokenizerUnigram <- function(x) NGramTokenizer(x, Weka_control(min = 1, max = 1))
+TokenizerBigram <- function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
+TokenizerTrigram <- function(x) NGramTokenizer(x, Weka_control(min = 3, max = 3))
+
+# generate TDMs
+tdm.unigram <- tm::TermDocumentMatrix(c, control = list(tokenize = TokenizerUnigram))
+tdm.bigram <- tm::TermDocumentMatrix(c, control = list(tokenize = TokenizerBigram))
+tdm.trigram <- tm::TermDocumentMatrix(c, control = list(tokenize = TokenizerTrigram))
+```
+
+# Most Frequent N-Grams
+
+Once the TDMs were determined, the total occurances of each term accoss all documents was calculated.
+
+```{r n_grams}
+ConvertTDMToCounts <- function(tdm, limit = 20) {
+  matrix <- as.matrix(tdm)
+  matrix.sums <- head(sort(rowSums(matrix), decreasing = TRUE), limit)
+  df <- data.frame("Gram" = names(matrix.sums), "Count" = matrix.sums)
+  df <- df[ order(-df$Count), ]
+  return(df)
+}
+
+# convert to term counts
+counts.unigram <- ConvertTDMToCounts(tdm.unigram)
+counts.bigram <- ConvertTDMToCounts(tdm.bigram)
+counts.trigram <- ConvertTDMToCounts(tdm.trigram)
+```
+
+Below are plots of the top 20 occuring unigrams, bigrams and trigrams.
+
+```{r ngram_plots, echo=FALSE}
+ggplot(data = counts.unigram, aes(x = reorder(Gram, -Count), y = Count)) +
+  labs(title = "Most Common Unigrams", x = "Unigram", y = "Count") +
+  geom_bar(stat = "Identity", aes(fill = Count)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggplot(data = counts.bigram, aes(x = reorder(Gram, -Count), y = Count)) +
+  labs(title = "Most Common Bigrams", x = "Unigram", y = "Count") +
+  geom_bar(stat = "Identity", aes(fill = Count)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggplot(data = counts.trigram, aes(x = reorder(Gram, -Count), y = Count)) +
+  labs(title = "Most Common Trigram", x = "Unigram", y = "Count") +
+  geom_bar(stat = "Identity", aes(fill = Count)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+# Next Steps
+
+The n-gram coverage could be calculated to give an idea ow what words may be over represented in the corpus. Also, a 
+prediction algorithm needs to be developed that leverages this work to determine n-gram probablities.
