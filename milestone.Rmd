@@ -165,5 +165,5 @@ ggplot(data = counts.trigram, aes(x = reorder(Gram, -Count), y = Count)) +
 
 # Next Steps
 
-The n-gram coverage could be calculated to give an idea ow what words may be over represented in the corpus. Also, a 
+The n-gram coverage could be calculated to give an idea of what words may be over represented in the corpus. Also, a 
 prediction algorithm needs to be developed that leverages this work to determine n-gram probablities.
