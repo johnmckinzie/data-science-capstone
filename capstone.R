@@ -13,79 +13,102 @@
 
 library(tm)
 library(RWeka)
-# library(parallel)
 options(mc.cores=1)
 
 kBadWordUrl <- "https://raw.githubusercontent.com/shutterstock/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/en"
-kBadWordDest <- "bad_words.txt" # https://github.com/shutterstock/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words
 kDataDir <- "data"
-kDataSet <- "sample"
+kDataSet <- "final"
+kDataSampleSet <- "sample"
 kLang <- "en_US"
 kCourpusDir <- file.path(kDataDir, kDataSet, kLang)
+kCourpusSampleDir <- file.path(kDataDir, kDataSampleSet, kLang)
+kBadWords = "bad_words.txt"
 
-
-GetBadWords <- function() {
-  download.file(kBadWordUrl, kBadWordDest)
+GetCorpusFiles <- function(dir = kCourpusDir) {
+  list.files(kCourpusDir, dir)
 }
 
-GetCorpusFiles <- function() {
-  list.files(kCourpusDir)
-}
-
-files.corpus <- GetCorpusFiles()
-print(files.corpus)
-
-GetFileStats <- function() {
-  files.corpus.stats <- data.frame(Date=as.Date(character()),
-  File=character(), 
-  User=character(), 
-  stringsAsFactors=FALSE) 
-  files.corpus.sizes <- lapply(files.corpus, function(file) {
-    path <- paste(kCourpusDir, file, sep = "/")
-    out <- system(paste("wc -lw", path), intern = TRUE)
-    out <- strsplit(out," ")
-    print(out)
-  })
-}
-
-GetFileStats()
+# GetFileStats <- function(dir = kCourpusDir) {
+#   currentwd <- getwd()
+#   setwd(kCourpusDir)
+#   
+#   counts <- system(paste("wc -lw "| awk '{ print $3, $1, $2 }'"), intern = TRUE)
+#   print(counts)
+#   m <- matrix(c("Name", "Lines", "Words"), ncol = 3)
+#   print(m)
+#   
+#   for (line in counts) {
+#     print("line")
+#     print(line)
+#     values <- strsplit(line, " ")
+#     print(values)
+#     m <- rbind(m, strsplit(line, " ")[[1]])
+#   }
+#   
+#   m <- m[-1, ]
+#   print(m)
+#   files.corpus.stats <- as.data.frame(m, header=TRUE)
+#   print(files.corpus.stats[1, ])
+#   colnames(files.corpus.stats) <- c("Name", "Lines", "Words")
+#   print(files.corpus.stats)
+# #   print(class(out))
+# #   print(out)
+#   
+#   sizes <- system(paste("ls -l", kDataFilePatter, "| awk '{ print $5 }'"), intern = TRUE)
+#   sizes <- as.integer(sizes)
+#   sizes <- round(c(sizes, sum(sizes)) / (2^20))
+#   print(sizes)
+#   
+#   files.corpus.stats$Size <- sizes
+#   print(files.corpus.stats)
+#   
+#   
+#   setwd(currentwd)
+#   files.corpus.stats
+# }
+# 
+# GetFileStats("*.txt")
 
 # remove
 CleanAndTransformCorpus <- function(corpus) {
   corpus <- tm_map(corpus, removePunctuation)
   corpus <- tm_map(corpus, removeNumbers)
   corpus <- tm_map(corpus, stripWhitespace)
-  corpus <- tm_map(corpus, content_transformer(tolower))
-  corpus <- tm_map(corpus, removeWords, c(stopwords("english"), readLines(kBadWordDest)), lazy = TRUE)
-  corpus <- tm_map(corpus, stemDocument, language = "english", lazy = TRUE)
+  corpus <- tm_map(corpus, tm::content_transformer(function(x) iconv(x, from = "UTF-8", to = "ASCII", sub = "")))
+  corpus <- tm_map(corpus, tm::content_transformer(tolower))
+  corpus <- tm_map(corpus, removeWords, c(stopwords("english"), readLines(kBadWords)), lazy = TRUE)
+  # corpus <- tm_map(corpus, stemDocument, language = "english", lazy = TRUE)
   corpus <- tm_map(corpus, PlainTextDocument)
-  return (corpus)
+  return(corpus)
 }
 
-
-library(tm)
-c <- Corpus(DirSource(kCourpusDir), readerControl = list(language = "en-US"))
+c <- tm::Corpus(DirSource(kCourpusSampleDir), readerControl = list(language = "en-US"))
 c <- CleanAndTransformCorpus(c)
 
-# adtm <-DocumentTermMatrix(a) 
-# adtm <- removeSparseTerms(adtm, 0.75)
-# 
-# inspect(adtm) 
-# 
-# # print(findFreqTerms(adtm, lowfreq=10)) # find terms with a frequency higher than 10
+# print(findFreqTerms(tdm, lowfreq=10)) # find terms with a frequency higher than 10
 # print(findAssocs(adtm, "usa",.5)) # just looking for some associations  
 # # findAssocs(adtm, "china",.5)
 
+ConvertTDMToCounts <- function(tdm, limit = 20) {
+  matrix <- as.matrix(tdm)
+  matrix.sums <- head(sort(rowSums(matrix), decreasing = TRUE), limit)
+  df <- data.frame("Gram" = names(matrix.sums), "Count" = matrix.sums)
+  df <- df[ order(-df$Count), ]
+  return(df)
+}
+
 # tokenizers
-TokenizerUnigram <- function(x) NGramTokenizer(x, Weka_control(min = 1, max = 1))
+# TokenizerUnigram <- function(x) NGramTokenizer(x, Weka_control(min = 1, max = 1))
 TokenizerBigram <- function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
 TokenizerTrigram <- function(x) NGramTokenizer(x, Weka_control(min = 3, max = 3))
 
 # generate TDMs
-tdm.unigram <- TermDocumentMatrix(c, control = list(tokenize = TokenizerUnigram))
+# tdm.unigram <- tm::TermDocumentMatrix(c, control = list(tokenize = TokenizerUnigram))
 tdm.bigram <- TermDocumentMatrix(c, control = list(tokenize = TokenizerBigram))
 tdm.trigram <- TermDocumentMatrix(c, control = list(tokenize = TokenizerTrigram))
 
-print(tdm.trigram[1:10, ])
-# tdm <- removeSparseTerms(tdm, 0.75)
-inspect(tdm.trigram[1:10, ])
+# convert to term counts
+# counts.unigram <- ConvertTDMToCounts(tdm.unigram)
+counts.bigram <- ConvertTDMToCounts(tdm.bigram)
+counts.trigram <- ConvertTDMToCounts(tdm.trigram)
+
