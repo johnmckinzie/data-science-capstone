@@ -4,3 +4,7 @@
 .Rprofile
 packrat/lib*/
 packrat/src/
+*_cache/
+*_files/
+*.html
+rsconnect/

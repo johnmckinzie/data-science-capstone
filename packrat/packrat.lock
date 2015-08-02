@@ -30,11 +30,6 @@ Source: CRAN
 Version: 0.12.0
 Hash: 9cad2f0525579d98b5ec2536febaf0da
 
-Package: SnowballC
-Source: CRAN
-Version: 0.5.1
-Hash: 6f14c834eea7672f25b83d9ba35b85ca
-
 Package: bitops
 Source: CRAN
 Version: 1.0-6
@@ -46,10 +41,21 @@ Version: 1.17.1
 Hash: 97cb6f6293cd18d17df77a6383cc6763
 Requires: bitops
 
+Package: chron
+Source: CRAN
+Version: 2.3-47
+Hash: d25d96d908cd21080f24c89eed4c80a0
+
 Package: colorspace
 Source: CRAN
 Version: 1.2-6
 Hash: 00bb12245cd975c450cc4a960884fa15
+
+Package: data.table
+Source: CRAN
+Version: 1.9.4
+Hash: b89234fb0b26ff6f53399cb5359d71a1
+Requires: chron, reshape2
 
 Package: dichromat
 Source: CRAN
@@ -75,6 +81,7 @@ Hash: cce53206179a99ae5a8bcf154ab5abde
 Package: ggplot2
 Source: CRAN
 Version: 1.0.1
+Hash: 4aff1b269135bd2cdea378f4f2f2895e
 Requires: digest, gtable, plyr, proto, reshape2, scales
 
 Package: gtable
@@ -123,6 +130,7 @@ Hash: 629133973445ad75e5438a2bb6b05c17
 Package: munsell
 Source: CRAN
 Version: 0.4.2
+Hash: 72d343a6664778029f49a7ad36de1cab
 Requires: colorspace
 
 Package: packrat
@@ -133,6 +141,7 @@ Hash: aed7d17407538df551a57caf6289c8bf
 Package: plyr
 Source: CRAN
 Version: 1.8.3
+Hash: 244dc84caf66006e7424b8001b2b9c99
 Requires: Rcpp
 
 Package: proto
@@ -148,7 +157,8 @@ Hash: 9dbbee37bd08546ea0ed6d3dab821952
 Package: reshape2
 Source: CRAN
 Version: 1.4.1
-Requires: stringr, Rcpp, plyr
+Hash: 3131569136fc8988dd84ef57c9c28d5c
+Requires: Rcpp, plyr, stringr
 
 Package: rmarkdown
 Source: CRAN
@@ -159,12 +169,19 @@ Requires: caTools, htmltools, knitr, yaml
 Package: scales
 Source: CRAN
 Version: 0.2.5
+Hash: b0dc8e47269dd486bf853b2f3960b732
 Requires: RColorBrewer, Rcpp, dichromat, labeling, munsell, plyr
 
 Package: slam
 Source: CRAN
 Version: 0.1-32
 Hash: bc3501cd4badda02e5be7837847c887d
+
+Package: splitstackshape
+Source: CRAN
+Version: 1.4.2
+Hash: f03f3d67f69fa2f02f8c910da98e5b4e
+Requires: data.table
 
 Package: stringi
 Source: CRAN
