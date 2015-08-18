@@ -39,8 +39,8 @@ GenerateData <- function() {
   TokenizerUnigram <- function(x) NGramTokenizer(x, Weka_control(min = 1, max = 1))
   unigram.tdm <- tm::TermDocumentMatrix(c, control = list(tokenize = TokenizerUnigram))
   unigram.tdm <- removeSparseTerms(unigram.tdm, 0.9999)
-  unigram.counts <- ConvertTDMToCounts(unigram.tdm)
-  save(unigram.counts, file = "model_data/unigrams.RData")
+  unigram.final <- ConvertTDMToCounts(unigram.tdm)
+  save(unigram.final, file = "model_data/unigrams.RData")
   
   # bigrams
   BigramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
